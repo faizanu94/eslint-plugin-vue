@@ -2,7 +2,20 @@
  * @author Yosuke Ota
  * issue https://github.com/vuejs/eslint-plugin-vue/issues/250
  */
-import * as utils from '../utils/index.js'
+import {
+  isScriptSetup,
+  isHtmlElementNode,
+  isSvgElementNode,
+  isMathElementNode,
+  isHtmlWellKnownElementName,
+  isSvgWellKnownElementName,
+  isMathWellKnownElementName,
+  isVueBuiltInElementName,
+  defineTemplateBodyVisitor,
+  hasInvalidEOF as utilsHasInvalidEOF,
+  executeOnVue,
+  getRegisteredComponents
+} from '../utils/index.js'
 import { getChecker, getExactConverter, pascalCase } from '../utils/casing.ts'
 import { toRegExpGroupMatcher, isRegExp } from '../utils/regexp.ts'
 
@@ -96,7 +109,7 @@ export default {
 
     const registeredComponents = new Set<string>(globalStrings.map(pascalCase))
 
-    if (utils.isScriptSetup(context)) {
+    if (isScriptSetup(context)) {
       // For <script setup>
       const globalScope = context.sourceCode.scopeManager.globalScope
       if (globalScope) {
@@ -123,13 +136,13 @@ export default {
       }
 
       if (
-        (!utils.isHtmlElementNode(node) &&
-          !utils.isSvgElementNode(node) &&
-          !utils.isMathElementNode(node)) ||
-        utils.isHtmlWellKnownElementName(node.rawName) ||
-        utils.isSvgWellKnownElementName(node.rawName) ||
-        utils.isMathWellKnownElementName(node.rawName) ||
-        utils.isVueBuiltInElementName(node.rawName)
+        (!isHtmlElementNode(node) &&
+          !isSvgElementNode(node) &&
+          !isMathElementNode(node)) ||
+        isHtmlWellKnownElementName(node.rawName) ||
+        isSvgWellKnownElementName(node.rawName) ||
+        isMathWellKnownElementName(node.rawName) ||
+        isVueBuiltInElementName(node.rawName)
       ) {
         return false
       }
@@ -147,7 +160,7 @@ export default {
 
     let hasInvalidEOF = false
 
-    return utils.defineTemplateBodyVisitor(
+    return defineTemplateBodyVisitor(
       context,
       {
         VElement(node) {
@@ -186,11 +199,11 @@ export default {
       },
       {
         Program(node) {
-          hasInvalidEOF = utils.hasInvalidEOF(node)
+          hasInvalidEOF = utilsHasInvalidEOF(node)
         },
         ...(shouldCheckRegisteredComponentsOnly
-          ? utils.executeOnVue(context, (obj) => {
-              for (const n of utils.getRegisteredComponents(obj)) {
+          ? executeOnVue(context, (obj) => {
+              for (const n of getRegisteredComponents(obj)) {
                 registeredComponents.add(n.name)
               }
             })
